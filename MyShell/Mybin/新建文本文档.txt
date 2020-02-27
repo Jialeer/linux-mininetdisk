@@ -1,0 +1,43 @@
+	char buf[1024]={0};
+	memset(buf, 0, sizeof(buf));
+	int n, count;
+	int fd[2];
+	if (pipe(fd) < 0)
+		return -1;
+	pid_t n=fork();
+	assert(-1!=n);
+	if (n == 0)//子进程
+	{
+		close(fd[0]);
+		if (strstr(StrArr[0], "/") != NULL)//strstr(abcdef,cde)==>cdef
+		{
+			memset(binpath, 0, 128);
+			strcat(binpath, StrArr[0]);   //use StrArr way
+		}
+		else
+		{
+			//use binpath way
+			strcat(binpath, StrArr[0]); //strcat(ab c,ef)==>abc ef
+		}
+		if (fd[1] != STDOUT_FILENO)
+		{
+			if (dup2(fd[1], STDOUT_FILENO) != STDOUT_FILENO)
+			{
+				return;
+			}
+			close(fd[1]);
+		}
+		if (execv(binpath, StrArr) == -1)
+			return;
+		exit(0);
+	}
+	else//父进程
+	{
+		close(fd[1]);
+		count = 0;
+		while ((n = read(fd[0], buf + count, len)) > 0 && count > len)
+			count += n;
+		close(fd[0]);
+		if (waitpid(pid, NULL, 0) > 0)
+			return -1;
+	}
